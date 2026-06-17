@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U-DRT 평양 호출 앱</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* 북한 평양의 가상 격자 지도 스타일 */
+        .map-bg {
+            background-color: #e5e7eb;
+            background-image: 
+                linear-gradient(to right, rgba(156,163,175,0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(156,163,175,0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+        }
+        .river {
+            position: absolute;
+            background-color: #93c5fd;
+            width: 80px;
+            height: 100%;
+            left: 45%;
+            transform: rotate(15deg);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 h-screen flex items-center justify-center font-sans">
+
+    <div class="bg-white w-full max-w-4xl h-5/6 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+        
+        <div class="w-full md:w-3/5 h-64 md:h-full map-bg p-4 flex flex-col justify-between overflow-hidden">
+            <div class="river"></div>
+            
+            <div class="z-10 bg-white bg-opacity-90 p-2 rounded-lg shadow text-xs font-bold text-gray-700">
+                📍 지도의 거점(마커)을 클릭하여 출발지와 목적지를 정하세요.
+            </div>
+
+            <div class="absolute inset-0 z-10">
+                <button onclick="selectLocation('평양역 (1차 허브)', 180, 420)" class="absolute bg-red-600 text-white font-bold text-xs px-2 py-1 rounded-full shadow-lg border-2 border-white hover:scale-110 transition" style="top: 60%; left: 25%;">
+                    🚇 평양역
+                </button>
+                <button onclick="selectLocation('개선역 (1차 허브)', 220, 150)" class="absolute bg-red-600 text-white font-bold text-xs px-2 py-1 rounded-full shadow-lg border-2 border-white hover:scale-110 transition" style="top: 25%; left: 30%;">
+                    🚇 개선역
+                </button>
+
+                <button onclick="selectLocation('통일거리 시장 (2차 허브)', 310, 520)" class="absolute bg-blue-600 text-white text-xs px-2 py-1 rounded shadow border border-white hover:scale-110 transition" style="top: 75%; left: 65%;">
+                    🛒 통일거리 시장
+                </button>
+                <button onclick="selectLocation('평양 제1인민병원 (2차 허브)', 120, 280)" class="absolute bg-blue-600 text-white text-xs px-2 py-1 rounded shadow border border-white hover:scale-110 transition" style="top: 40%; left: 15%;">
+                    🏥 제1인민병원
+                </button>
+                <button onclick="selectLocation('김일성종합대학 (2차 허브)', 380, 200)" class="absolute bg-blue-600 text-white text-xs px-2 py-1 rounded shadow border border-white hover:scale-110 transition" style="top: 30%; left: 55%;">
+                    🎓 김일성대
+                </button>
+            </div>
+
+            <div class="z-10 text-right text-xs text-gray-400 font-mono">
+                [U-DRT AI 가상 지도 가동 중]
+            </div>
+        </div>
+
+        <div class="w-full md:w-2/5 h-full bg-gray-50 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-gray-200">
+            
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-xl font-bold text-blue-900">🛸 U-DRT 평양 통화</h1>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-semibold">Beta v1.2</span>
+                </div>
+                
+                <div class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">출발지 (Departure)</label>
+                        <input type="text" id="start-node" readonly placeholder="지도의 붉은/푸른 마커를 클릭하세요" class="mt-1 block w-full p-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-800 font-semibold focus:outline-none">
+                    </div>
+                    <div class="flex justify-center">
+                        <span class="text-gray-400 text-sm">⬇️</span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">목적지 (Destination)</label>
+                        <input type="text" id="end-node" readonly placeholder="지도의 붉은/푸른 마커를 클릭하세요" class="mt-1 block w-full p-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-800 font-semibold focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">인터페이스 최적화 모드</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="bg-white border rounded-lg p-2 flex items-center space-x-2 cursor-pointer text-xs">
+                            <input type="radio" name="ui-mode" checked class="text-blue-600">
+                            <span>스마트폰 일반앱</span>
+                        </label>
+                        <label class="bg-white border rounded-lg p-2 flex items-center space-x-2 cursor-pointer text-xs">
+                            <input type="radio" name="ui-mode" class="text-blue-600">
+                            <span>오프라인 부스(기술불안 케어)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 space-y-3">
+                <button onclick="requestDRT()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition transform active:scale-95 text-center">
+                    🤖 AI 적응형 버스 호출하기
+                </button>
+
+                <div id="result-panel" class="hidden bg-gray-900 text-green-400 p-4 rounded-xl font-mono text-xs space-y-1 shadow-inner">
+                    <p class="text-yellow-400 font-bold">● [AI 강화학습 연산 완료]</p>
+                    <p>• 배차 차량: <span class="text-white">U-DRT 평양 04호</span></p>
+                    <p>• 예상 대기시간: <span id="wait-time" class="text-white">-</span></p>
+                    <p>• 적용 알고리즘: <span class="text-purple-300">LSTM 시계열 노선 최적화</span></p>
+                    <p class="text-gray-400 mt-1" id="route-desc"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let selectionStage = "start"; // start or end
+
+        // 지도에서 마커를 누를 때 인풋창에 입력되는 함수
+        function selectLocation(name, x, y) {
+            const startInput = document.getElementById('start-node');
+            const endInput = document.getElementById('end-node');
+
+            if (selectionStage === "start") {
+                startInput.value = name;
+                selectionStage = "end"; // 다음 클릭은 목적지로 지정
+                startInput.classList.remove('bg-gray-100');
+                startInput.classList.add('bg-red-50');
+            } else {
+                if (startInput.value === name) {
+                    alert("출발지와 목적지는 같을 수 없습니다.");
+                    return;
+                }
+                endInput.value = name;
+                selectionStage = "start"; // 다시 초기화
+                endInput.classList.remove('bg-gray-100');
+                endInput.classList.add('bg-blue-50');
+            }
+        }
+
+        // AI 버스 호출하기 클릭 이벤트
+        function requestDRT() {
+            const start = document.getElementById('start-node').value;
+            const end = document.getElementById('end-node').value;
+            const resultPanel = document.getElementById('result-panel');
+
+            if (!start || !end) {
+                alert("지도에서 출발지와 목적지를 먼저 선택해 주세요!");
+                return;
+            }
+
+            // 가상 대기 시간 계산 (기획서의 유동인구 기반 임의 생성)
+            const mockWaitTime = Math.floor(Math.random() * 6) + 3; // 3~8분
+            document.getElementById('wait-time').innerText = mockWaitTime + "분 후 도착";
+            
+            // 기획서 내용(허브 앤 스포크 모델 / 도로 우회) 녹여내기
+            let desc = "";
+            if (start.includes('1차') && end.includes('1차')) {
+                desc = "AI 분석 지침: 1차 거점 간 고속 간선 축 노선을 활용하여 신속 이동을 지원합니다.";
+            } else {
+                desc = "AI 분석 지침: 가상 구역(Zone) 내 실시간 가변 경로 강화학습 모델(RL)을 기반으로 도로 열악 구간을 피해 배차되었습니다.";
+            }
+            document.getElementById('route-desc').innerText = "💡 " + desc;
+
+            // 결과창 활성화
+            resultPanel.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
